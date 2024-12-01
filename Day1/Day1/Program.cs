@@ -50,10 +50,49 @@ class Program
 
         return new Inputs(left.ToArray(), right.ToArray());
     }
+
+    static Dictionary<int, uint> count_occurences(int[] column)
+    {
+        var d = new Dictionary<int, uint>();
+        foreach (var i in column)
+        {
+            if (d.ContainsKey(i))
+            {
+                d[i] += 1;
+            }
+            else
+            {
+                d[i] = 1;
+            }
+        }
+
+        return d;
+    }
+
+    static long similarity_check(int[] left, int[] right)
+    {
+        var counts_left = count_occurences(left);
+        var counts_right = count_occurences(right);
+        long s = 0;
+        foreach (var pair in counts_left)
+        {
+            var value = pair.Key;
+            var left_count = pair.Value;
+            uint right_count = 0;
+            counts_right.TryGetValue(value, out right_count);
+            s += value * left_count * right_count;
+        }
+
+        return s;
+    }
+    
     static void Main(string[] args)
     {
         var inputs = read_input_file(args[0]);
         int result = sum_of_sorted_differences(inputs.left, inputs.right);
-        Console.WriteLine($"{result}");
+        Console.WriteLine($"Part 1 = {result}");
+        
+        long result2 = similarity_check(inputs.left, inputs.right);
+        Console.WriteLine($"Part 2 = {result2}");
     }
 }
