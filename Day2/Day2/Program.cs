@@ -1,7 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-using System.Text.RegularExpressions;
-
-internal class Program
+﻿internal class Program
 {
     static int[] Diff(int[] input)
     {
@@ -22,23 +19,47 @@ internal class Program
             return (Math.Sign(i) == sign) && abs > 0 && abs < 4;
         });
     }
+
+    static bool IsSafeWithDamping(int[] input)
+    {
+        for (int i = 0; i < input.Length; i++)
+        {
+            var skipped = input.Where((ValueTask, index) => index != i).ToArray();
+            if (IsSafe(skipped))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
     
     public static void Main(string[] args)
     {
         StreamReader reader = new StreamReader(args[0]);
         string line;
-        int s = 0;
+        int part1 = 0;
+        int part2 = 0;
         while ((line = reader.ReadLine()) != null)
         {
             var numbers = line.Trim()
                 .Split(' ')
                 .Select(a => int.Parse(a))
                 .ToArray();
+
             if (IsSafe(numbers))
             {
-                s += 1;
+                part1 += 1;
+                part2 += 1;
             }
+
+            else if (IsSafeWithDamping(numbers))
+            {
+                part2 += 1;
+            }
+
         }
-        Console.WriteLine(s);
+        Console.WriteLine(part1);
+        Console.WriteLine(part2);
     }
 }
