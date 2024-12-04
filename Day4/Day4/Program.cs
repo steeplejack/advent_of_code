@@ -5,6 +5,9 @@ namespace Day4;
 /*
  * Today's task is to do a wordsearch. There's a grid of letters, and we're looking for
  * as many 'XMAS' as we can find.
+ *
+ * Part 2 changes things a bit (but really makes it easier). Now we have to look for interlocking
+ * 'MAS' patterns in the shape of an 'X'. There are only 4 things to check, not 8, and the padding is smaller.
  */
 
 class Program
@@ -62,7 +65,7 @@ class Program
         return newgrid;
     }
     
-    static void Main(string[] args)
+    static void Part1(string[] args)
     {
         int s = 0;
         string target = "XMAS";
@@ -98,5 +101,47 @@ class Program
             }
         }
         Console.WriteLine(s);
+    }
+
+    static void Part2(string[] args)
+    {
+        int padding = 1;
+        var grid = LoadGrid(args[1], padding + 1);
+        
+        char target = 'A'; // centre of an X-MAS
+        int s = 0;
+        
+        // Scan over the grid (original grid, adjusted for padding)
+        for (int i = padding; i < grid.GetLength(0) - padding; i++)
+        {
+            for (int j = padding; j < grid.GetLength(1) - padding; j++)
+            {
+                char gridChar = grid[i, j];
+                // Whenever the grid letter matches the start of the target, look in all
+                // 8 directions for a full match
+                if (gridChar == target)
+                {
+                    char tl = grid[i - 1, j - 1];
+                    char tr = grid[i - 1, j + 1];
+                    char bl = grid[i + 1, j - 1];
+                    char br = grid[i + 1, j + 1];
+                    s += (tl, tr, bl, br) switch
+                    {
+                        ('M', 'M', 'S', 'S') => 1,
+                        ('M', 'S', 'M', 'S') => 1,
+                        ('S', 'M', 'S', 'M') => 1,
+                        ('S', 'S', 'M', 'M') => 1,
+                        _ => 0
+                    };
+                }
+            }
+        }
+        Console.WriteLine(s);
+    }
+
+    static void Main(string[] args)
+    {
+        Part1(args);
+        Part2(args);
     }
 }
