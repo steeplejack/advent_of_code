@@ -1,15 +1,16 @@
 ﻿using System.Numerics;
+using BlockadeList = System.Collections.Generic.List<(int, int)>;
 
 namespace Day6;
 
-enum Direction { Up, Down, Left, Right }
+public enum Direction { Up, Down, Left, Right }
 
 public class Guard
 {
     public int row { get; set; }
     public int col { get; set; }
-    Direction direction { get; set; }
-    
+    public Direction direction { get; set; }
+
     public Guard(int row, int col)
     {
         this.row = row;
@@ -52,13 +53,13 @@ class Program
         var (x, y) = (point.Item1, point.Item2);
         return (x < 0 || y < 0 || x > max || y > max);
     }
-    static void Main(string[] args)
+
+    static (BlockadeList, (int, int), int) ReadFile(string filename)
     {
-        List<(int, int)> blockades = new();
-        HashSet<(int, int)> trace = new();
-        (int, int)? current = null;
+        BlockadeList blockades = new();
+        (int, int) startPos = (0, 0);
         int max = 0;
-        using (StreamReader reader = new StreamReader(args[1]))
+        using (StreamReader reader = new StreamReader(filename))
         {
             string line;
             int rownum = 0;
@@ -74,17 +75,63 @@ class Program
                     }
                     else if (line[colnum] == '^')
                     {
-                        current = (rownum, colnum);
-                        trace.Add((rownum, colnum));
+                        startPos = (rownum, colnum);
                     }
                 }
                 rownum++;
             }
         }
+        return (blockades, startPos, max);
+    }
 
-        Console.WriteLine($"Starting point: {current}");
-        Console.WriteLine($"Max: {max}");
-        Guard guard = new Guard(current.Value.Item1, current.Value.Item2);
+    static bool FormsCycle((int, int) startPos, BlockadeList initialBlockades, (int, int) newBlockade, int max)
+    {
+        Guard guard = new Guard(startPos.Item1, startPos.Item2);
+        BlockadeList blockades = new();
+        foreach (var blockade in initialBlockades)
+        {
+            blockades.Add(blockade);
+        }
+        blockades.Add(newBlockade);
+
+        HashSet<(int, int, Direction)> visited = new();
+        visited.Add((guard.row, guard.col, guard.direction));
+
+        int iter = 0;
+        int maxIter = 1000000;
+        while (!OutOfBounds((guard.row, guard.col), max) && iter < maxIter)
+        {
+            var next = guard.NextPos();
+
+            if (blockades.Contains(next))
+            {
+                guard.Turn();
+            }
+            else
+            {
+                guard.Move();
+            }
+
+            var current = (guard.row, guard.col, guard.direction);
+
+            if (visited.Contains(current))
+            {
+                return true;
+            }
+
+            visited.Add(current);
+
+            iter++;
+        }
+
+        return false;
+    }
+    static HashSet<(int, int)> Part1(string[] args)
+    {
+        var (blockades, startPos, max) = ReadFile(args[1]);
+        HashSet<(int, int)> trace = new();
+
+        Guard guard = new Guard(startPos.Item1, startPos.Item2);
         while (!OutOfBounds((guard.row, guard.col), max))
         {
             trace.Add((guard.row, guard.col));
@@ -98,10 +145,32 @@ class Program
                 guard.Move();
             }
         }
-        // foreach ((int rownum, int colnum) in trace)
-        // {
-        //     Console.WriteLine($"Trace: ({rownum}, {colnum})");
-        // }
-        Console.WriteLine($"Steps: {trace.Count}");
+        Console.WriteLine($"Part 1: {trace.Count}");
+        return trace;
+    }
+
+    static void Part2(string[] args, HashSet<(int, int)> path)
+    {
+        var (blockades, startPos, max) = ReadFile(args[1]);
+        int cycleFormingBlockades = 0;
+        foreach(var (row, col) in path)
+        {
+            if (FormsCycle(startPos, blockades, (row, col), max))
+            {
+                cycleFormingBlockades++;
+            }
+        }
+
+        Console.WriteLine($"Part 2: {cycleFormingBlockades}");
+    }
+
+    static void Main(string[] args)
+    {
+        var path = Part1(args);
+        var watch = new System.Diagnostics.Stopwatch();
+        watch.Start();
+        Part2(args, path);
+        watch.Stop();
+        Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
     }
 }
