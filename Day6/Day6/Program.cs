@@ -153,13 +153,14 @@ class Program
     {
         var (blockades, startPos, max) = ReadFile(args[1]);
         int cycleFormingBlockades = 0;
-        foreach(var (row, col) in path)
+        Parallel.ForEach(path, (position) =>
         {
+            var (row, col) = position;
             if (FormsCycle(startPos, blockades, (row, col), max))
             {
-                cycleFormingBlockades++;
+                System.Threading.Interlocked.Increment(ref cycleFormingBlockades);
             }
-        }
+        });
 
         Console.WriteLine($"Part 2: {cycleFormingBlockades}");
     }
