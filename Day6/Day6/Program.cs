@@ -1,5 +1,5 @@
 ﻿using System.Numerics;
-using BlockadeList = System.Collections.Generic.List<(int, int)>;
+using BlockadeList = System.Collections.Generic.HashSet<(int, int)>;
 
 namespace Day6;
 
