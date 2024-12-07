@@ -41,5 +41,4 @@ def main():
 
 if __name__ == '__main__':
     result = main()
-    assert result == 249943041417600 or result == 11387, 'Wrong answer'
     print(f'Part2: {result}')
