@@ -1,15 +1,28 @@
 ﻿using System.Collections.Generic;
 namespace Day8;
 
+/*
+ * What's going on today? There's a map of radio masts represented by a letter or number ID.
+ * The task is to find all pairs of masts with the same ID and find two 'antinodes', which
+ * are 2 points a set distance from the masts along the line between them (if M1 and M2 are the
+ * masts, and D is the distance between them, then the antinodes are going to be at the point D
+ * away from M1 in the opposite direction to M2, and vice versa). The solution os the number of
+ * antinodes you find that are within the bounds of the grid.
+ *
+ * Part 2 extends part 1 by asking for more antinodes. Now they are found at all points along
+ * the line from M1 to M2 at D-sized intervals, including at the positions of M1 and M2.
+ */
+
 internal class Vector(int x, int y)
 {
-    internal int x { get; set; } = x;
-    internal int y { get; set; } = y;
+    internal int x { get; } = x;
+    internal int y { get; } = y;
 }
+
 internal class Point(int x, int y) : IEquatable<Point>
 {
-    internal int x { get; set; } = x;
-    internal int y { get; set; } = y;
+    internal int x { get; } = x;
+    internal int y { get; } = y;
 
     public override bool Equals(object obj)
     {
@@ -103,6 +116,7 @@ class Program
 
         return nodeSet.Count;
     }
+
     static void Main(string[] args)
     {
         var (points, max) = ReadFile(args[1]);
