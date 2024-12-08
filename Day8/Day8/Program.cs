@@ -48,13 +48,45 @@ internal class Point(int x, int y) : IEquatable<Point>
     {
         return x <= max && y <= max && x >= 0 && y >= 0;
     }
+
+    internal Point Copy()
+    {
+        return new Point(x, y);
+    }
 }
 
 class Program
 {
-    static void Main(string[] args)
+    static int Part2(Dictionary<char, List<Point>> points, int max)
     {
-        var (points, max) = ReadFile(args[0]);
+        HashSet<Point> nodeSet = new();
+        foreach (var kvp in points)
+        {
+            var pairs = Pairs(kvp.Value);
+            foreach (var (p1, p2) in pairs)
+            {
+                var displacement = p1.Displacement(p2);
+                Point node1 = p1.Copy();
+                while (node1.InBounds(max))
+                {
+                    nodeSet.Add(node1);
+                    node1 = node1.Sub(displacement);
+                }
+
+                Point node2 = p2.Copy();
+                while (node2.InBounds(max))
+                {
+                    nodeSet.Add(node2);
+                    node2 = node2.Add(displacement);
+                }
+            }
+        }
+
+        return nodeSet.Count;
+    }
+
+    static int Part1(Dictionary<char, List<Point>> points, int max)
+    {
         HashSet<Point> nodeSet = new HashSet<Point>();
         foreach (var kvp in points)
         {
@@ -69,7 +101,13 @@ class Program
             }
         }
 
-        Console.WriteLine($"{nodeSet.Count} nodes");
+        return nodeSet.Count;
+    }
+    static void Main(string[] args)
+    {
+        var (points, max) = ReadFile(args[1]);
+        Console.WriteLine($"Part 1: {Part1(points, max)} nodes");
+        Console.WriteLine($"Part 2: {Part2(points, max)} nodes");
     }
 
     static List<(Point, Point)> Pairs(List<Point> points)
