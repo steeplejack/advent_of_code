@@ -26,19 +26,26 @@ internal class Node(int elevation, int row, int col): IEquatable<Node>
     }
 }
 
+enum OutputType
+{
+    DISTINCT,
+    TOTAL,
+}
 class Program
 {
-    static int DFS(Graph graph, Node start, int target)
+    static int DFS(Graph graph, Node start, int target, OutputType output)
     {
         Stack<Node> stack = new();
         stack.Push(start);
         HashSet<Node> results = new();
+        int total = 0;
 
         while (stack.Count > 0)
         {
             var node = stack.Pop();
             if (node.elevation == target)
             {
+                total++;
                 results.Add(node);
             }
 
@@ -48,15 +55,20 @@ class Program
             }
         }
 
-        return results.Count;
+        return output switch
+        {
+            OutputType.TOTAL => total,
+            OutputType.DISTINCT => results.Count,
+        };
     }
     static void Main(string[] args)
     {
         var (graph, nrow, ncol) = ReadGraph(args[1]);
         ConnectGraph(graph, nrow, ncol);
         var (starts, ends) = FindStartsAndEnds(graph, nrow, ncol);
-        int sum = starts.Select(x => DFS(graph, x, 9)).Sum();
-        Console.WriteLine(sum);
+        int part1 = starts.Select(x => DFS(graph, x, 9, OutputType.DISTINCT)).Sum();
+        int part2 = starts.Select(x => DFS(graph, x, 9, OutputType.TOTAL)).Sum();
+        Console.WriteLine($"Part 1: {part1}\nPart 2: {part2}");
     }
     static (Graph, int, int) ReadGraph(string filename)
     {
