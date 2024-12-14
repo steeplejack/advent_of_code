@@ -2,24 +2,24 @@
 
 using System.Text.RegularExpressions;
 
-internal class PuzzleValues(int a, int b, int c, int d, int m, int n)
+internal class PuzzleValues(long a, long b, long c, long d, long m, long n)
 {
-    internal int a { get; } = a;
-    internal int b { get; } = b;
-    internal int c { get; } = c;
-    internal int d { get; } = d;
-    internal int m { get; } = m;
-    internal int n { get; } = n;
+    internal long a { get; } = a;
+    internal long b { get; } = b;
+    internal long c { get; } = c;
+    internal long d { get; } = d;
+    internal long m { get; } = m;
+    internal long n { get; } = n;
 }
 
 class Program
 {
-    static PuzzleValues ExtractValues(List<string> data)
+    static PuzzleValues ExtractValues(List<string> data, long offset)
     {
         var values = Regex.Match(data[0], @"Button A: X\+(\d+), Y\+(\d+)")
             .Groups.Values
             .Skip(1)
-            .Select(x => int.Parse(x.Value))
+            .Select(x => long.Parse(x.Value))
             .Take(2)
             .ToArray();
         var (a, c) = (values[0], values[1]);
@@ -27,7 +27,7 @@ class Program
         values = Regex.Match(data[1], @"Button B: X\+(\d+), Y\+(\d+)")
             .Groups.Values
             .Skip(1)
-            .Select(x => int.Parse(x.Value))
+            .Select(x => long.Parse(x.Value))
             .Take(2)
             .ToArray();
         var (b, d) = (values[0], values[1]);
@@ -35,29 +35,29 @@ class Program
         values = Regex.Match(data[2], @"Prize: X=(\d+), Y=(\d+)")
             .Groups.Values
             .Skip(1)
-            .Select(x => int.Parse(x.Value))
+            .Select(x => long.Parse(x.Value))
             .Take(2)
             .ToArray();
         var (m, n) = (values[0], values[1]);
 
-        return new PuzzleValues(a, b, c, d, m, n);
+        return new PuzzleValues(a, b, c, d, m + offset, n + offset);
     }
 
-    static int? SolvePuzzle(PuzzleValues values)
+    static long? SolvePuzzle(PuzzleValues values)
     {
         var denom = 1.0 / (values.a * values.d - values.b * values.c);
         var x = double.Round((values.m * values.d - values.n * values.b) * denom);
         var y = double.Round((values.a * values.n - values.c * values.m) * denom);
         if (values.a * x + values.b * y == values.m && values.c * x + values.d * y == values.n)
         {
-            return 3 * (int)x + (int)y;
+            return 3 * (long)x + (long)y;
         }
         return null;
     }
 
-    static int ReadFile(string filename)
+    static long ReadFile(string filename, long offset)
     {
-        int sum = 0;
+        long sum = 0;
         using (StreamReader file = File.OpenText(filename))
         {
             string line;
@@ -71,7 +71,7 @@ class Program
 
                 if (lines.Count == 3)
                 {
-                    var values = ExtractValues(lines);
+                    var values = ExtractValues(lines, offset);
                     var solution = SolvePuzzle(values);
                     if (solution.HasValue)
                     {
@@ -87,7 +87,9 @@ class Program
 
     static void Main(string[] args)
     {
-        var part1 = ReadFile(args[1]);
+        var part1 = ReadFile(args[1], 0);
+        var part2 = ReadFile(args[1], 10000000000000);
         Console.WriteLine($"Part 1: {part1}");
+        Console.WriteLine($"Part 2: {part2}");
     }
 }
