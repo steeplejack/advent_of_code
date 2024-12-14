@@ -94,10 +94,6 @@ class Program
             {
                 bottomRight += count;
             }
-            else
-            {
-                Console.WriteLine($"Position ({x}, {y}) is in the middle");
-            }
         }
         return topLeft * topRight * bottomLeft * bottomRight;
     }
@@ -107,6 +103,22 @@ class Program
         var robots = ReadInput(args[1]);
         Dictionary<(int, int), int> positionCounts = MoveAllRobots(robots, 100, 101, 103);
         int result = CountQuadrants(positionCounts, max_x: 101, max_y: 103);
-        Console.WriteLine(result);
+        Console.WriteLine($"Part 1: {result}");
+
+        MoveAllRobots(robots, 101 * 103 - 100, 101, 103); // Reset
+        int rep = 0;
+        int[] scores = new int[101 * 103];
+
+        while (rep < 101 * 103)
+        {
+            var positions = MoveAllRobots(robots, 1, 101, 103);
+            var score = CountQuadrants(positions, 101, 103);
+            scores[rep] = score;
+
+            rep++;
+        }
+
+        result = Array.IndexOf(scores, scores.Min()) + 1;
+        Console.WriteLine($"Part 2: {result}");
     }
 }
