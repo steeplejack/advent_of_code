@@ -1,4 +1,6 @@
 ﻿
+using System.ComponentModel.DataAnnotations;
+
 namespace Day16;
 
 public enum Direction
@@ -254,6 +256,66 @@ public class Graph<T> where T : notnull
 
         return (distances[end], previous);
     }
+
+    public (double, List<List<Node<T>>>) DijkstraPath(Node<T> start, Node<T> end)
+    {
+        if (!Nodes.Values.Contains(start))
+        {
+            throw new ArgumentException($"Start node not found: {start}");
+        }
+        if (!Nodes.Values.Contains(end))
+        {
+            throw new ArgumentException($"Node not found: {end}");
+        }
+
+        PriorityQueue<(Node<T>, double), double> queue = new PriorityQueue<(Node<T>, double), double>();
+        queue.Enqueue((start, 0), 0);
+
+        var distances = new Dictionary<Node<T>, double>();
+        foreach (var node in GetNodes())
+        {
+            distances[node] = double.PositiveInfinity;
+        }
+        distances[start] = 0;
+
+        var paths = new Dictionary<Node<T>, List<List<Node<T>>>>();
+        paths[start] = new List<List<Node<T>>>
+        {
+            new List<Node<T>> { start }
+        };
+
+        while (queue.Count > 0)
+        {
+            var (currentNode, currentDist) = queue.Dequeue();
+            if (currentNode == end) { return (distances[end], paths[end]); }
+            if (currentDist > distances[currentNode]) { continue; }
+
+            var neighbours = GetNeighbours(currentNode);
+
+            foreach (var (neighbour, dist) in neighbours)
+            {
+                double new_dist = dist + currentDist;
+                if (new_dist < distances[neighbour])
+                {
+                    distances[neighbour] = new_dist;
+                    paths[neighbour] = paths[currentNode]
+                        .Select(path => new List<Node<T>>(path) { neighbour})
+                        .ToList();
+                    queue.Enqueue((neighbour, new_dist), new_dist);
+                }
+
+                else if (new_dist == distances[neighbour])
+                {
+                    paths[neighbour].AddRange(paths[currentNode]
+                        .Select(path => new List<Node<T>>(path) { neighbour }));
+                }
+
+            }
+
+        }
+
+        return (distances[end], paths[end]);
+    }
 }
 
 class Program
@@ -396,40 +458,33 @@ class Program
 
     static void Main(string[] args)
     {
-        var (graph, start_pos, end_pos) = ReadInput(args[0]);
-        // Console.WriteLine($"Start = {start_pos}, End = {end_pos}");
+        var (graph, start_pos, end_pos) = ReadInput(args[1]);
 
         GridSquare start = new(start_pos.Item1, start_pos.Item2, Direction.E, false);
         Node<GridSquare> start_node = graph.GetNode(start);
 
         double min_distance = double.MaxValue;
+        int numOnBestPath = 0;
         foreach (Direction direction in Enum.GetValues(typeof(Direction)))
         {
             GridSquare end = new(end_pos.Item1, end_pos.Item2, direction, false);
             Node<GridSquare> end_node = graph.GetNode(end);
-            var (distance, pathDict) = graph.Dijkstra(start_node, end_node);
-            // Console.WriteLine($"End direction = {direction}. Distance = {distance}");
+            var (distance, bestPath) = graph.DijkstraPath(start_node, end_node);
+            HashSet<(int, int)> onBestPath = new();
+            foreach (var path in bestPath)
+            {
+                foreach (var node in path)
+                {
+                    onBestPath.Add((node.Value.Row, node.Value.Col));
+                }
+            }
+
             if (distance < min_distance)
             {
                 min_distance = distance;
+                numOnBestPath = onBestPath.Count;
             }
-
-            List<Node<GridSquare>> path = new();
-            var prev = end_node;
-            while (prev != start_node)
-            {
-                path.Add(prev);
-                prev = pathDict[prev];
-            }
-            path.Add(start_node);
-
-            path.Reverse();
-
-            // foreach (var node in path)
-            // {
-            //     Console.WriteLine($"({node.Value.Row}, {node.Value.Col}, {node.Value.Direction})");
-            // }
         }
-        Console.WriteLine($"Min distance = {min_distance}");
+        Console.WriteLine($"Min distance = {min_distance}. Grid squares on any best path = {numOnBestPath}");
     }
 }
