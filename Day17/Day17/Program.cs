@@ -3,6 +3,17 @@ using System.Net.Http.Headers;
 
 namespace Day17;
 
+/*
+ * Today's task is to build a mini computer that can execute a program. It has three registers and
+ * seven different operations.
+ *
+ * Part 1 is to work out the output of a particular program for a particular arrangement of register
+ * values.
+ *
+ * Part 2 is to change the value of register A until the program outputs its own input.
+ */
+
+
 public struct Registers
 {
     public int A { get; set; } = 0;
