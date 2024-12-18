@@ -10,17 +10,23 @@ namespace Day17;
  * Part 1 is to work out the output of a particular program for a particular arrangement of register
  * values.
  *
- * Part 2 is to change the value of register A until the program outputs its own input.
+ * Part 2 is to change the value of register A until the program outputs its own input. The idea that
+ * worked for me was first to recognised that the input program is structured so that register A gets
+ * bitshifted 3 places every iteration, and the output of each iteration only depends on the last 3
+ * bits of register A. So you can check all 8 3bit values to match the last position of the program,
+ * then shift them left 3 places, then add each of the 8 3bit values to the result until it matches the
+ * last 2 positions of the program, and so on. Sometimes more than one value will provide a match, so
+ * the solution space branches out a bit. This can be managed with a recursion.
  */
 
 
 public struct Registers
 {
-    public int A { get; set; } = 0;
-    public int B { get; set; } = 0;
-    public int C { get; set; } = 0;
+    public long A { get; set; } = 0;
+    public long B { get; set; } = 0;
+    public long C { get; set; } = 0;
 
-    public Registers(int a, int b, int c)
+    public Registers(long a, long b, long c)
     {
         A = a;
         B = b;
@@ -92,24 +98,12 @@ public class OpProgram
         return Program[InstructionPointer + 1];
     }
 
+    public List<int> GetProgram() => Program;
+
     public override string ToString()
     {
         string operations = String.Join(",", Program.Select(x => x.ToString()));
-        List<char> pointer = new();
-        for (int i = 0; i < Program.Count * 2; i++)
-        {
-            if (i == InstructionPointer * 2)
-            {
-                pointer.Add('^');
-                break;
-            }
-            else
-            {
-                pointer.Add(' ');
-            }
-        }
-
-        return "*\n" + operations + '\n' + new String(pointer.ToArray()) + "\n*";
+        return "Program: " + operations;
     }
 }
 
@@ -150,11 +144,11 @@ class Runner
         else
         {
             string outputString = String.Join(",", _output.Select(x => x.ToString()));
-            Console.WriteLine($"Output: {outputString}";
+            Console.WriteLine($"Output:  {outputString}");
         }
     }
 
-   public int Combo(int operand)
+   public long Combo(int operand)
     {
         return operand switch
         {
@@ -166,9 +160,7 @@ class Runner
     }
     public bool Adv(int operand)
     {
-        int opvalue = Combo(operand);
-        int divisor = 1 << opvalue;
-        _registers.A /= divisor;
+        _registers.A >>= (int)Combo(operand);
         return true;
     }
 
@@ -188,7 +180,7 @@ class Runner
     {
         if (_registers.A != 0)
         {
-            _program.SetInstructionPointer(operand);
+            _program.SetInstructionPointer((int)operand);
             return false;
         }
 
@@ -203,23 +195,19 @@ class Runner
 
     public bool Out(int operand)
     {
-        _output.Add(Combo(operand) % 8);
+        _output.Add((int)(Combo(operand) % 8));
         return true;
     }
 
     private bool Bdv(int operand)
     {
-        int opvalue = Combo(operand);
-        int divisor = 1 << opvalue;
-        _registers.B = _registers.A / divisor;
+        _registers.B = _registers.A >> (int)Combo(operand);
         return true;
     }
 
     private bool Cdv(int operand)
     {
-        int opvalue = Combo(operand);
-        int divisor = 1 << opvalue;
-        _registers.C = _registers.A / divisor;
+        _registers.C = _registers.A >> (int)Combo(operand);
         return true;
     }
 }
@@ -240,17 +228,17 @@ class Program
                 if (line.Length == 0) continue;
                 if (line.StartsWith("Register A"))
                 {
-                    registers.A = int.Parse(line.Split(":")[1].Trim());
+                    registers.A = long.Parse(line.Split(":")[1].Trim());
                 }
 
                 else if (line.StartsWith("Register B"))
                 {
-                    registers.B = int.Parse(line.Split(":")[1].Trim());
+                    registers.B = long.Parse(line.Split(":")[1].Trim());
                 }
 
                 else if (line.StartsWith("Register C"))
                 {
-                    registers.C = int.Parse(line.Split(":")[1].Trim());
+                    registers.C = long.Parse(line.Split(":")[1].Trim());
                 }
 
                 else
@@ -263,13 +251,75 @@ class Program
         return (registers, program);
     }
 
-    static void Main(string[] args)
+    static int RunIteration(long a)
+    // Specific to the program in input.txt
     {
-        var (registers, program) = ReadInput(args[1]);
-        Console.WriteLine($"Inital Registers:\n{registers}");
-        Console.WriteLine($"Program: {program}");
-        Runner runner = new(registers, program);
-        runner.Run();
-        Console.WriteLine($"Final Registers:\n{runner.Registers}");
+        var b = (a % 8) ^ 1;
+        var c = (a >> (int)b);
+        b = b ^ c ^ 4;
+        return (int)(b % 8);
+    }
+
+    static List<int> RunProgram(long a)
+    // Specific to the program in input.txt
+    {
+        List<int> output = new();
+        while (a > 0)
+        {
+            output.Add(RunIteration(a));
+            a >>= 3;
+        }
+
+        return output;
+    }
+
+    static bool Test(long a, List<int> program)
+    {
+        if (a == 0) { return false; }
+
+        var result = RunProgram(a);
+        return result.SequenceEqual(program);
+    }
+
+    static List<long> Quine(List<int> program)
+    {
+        int l = program.Count;
+        Dictionary<int, List<long>> results = new();
+
+        void Rec(long a, int n)
+        {
+            if (n > l) return;
+            if (Test(a, program.GetRange(l-n, n)))
+            {
+                if (results.ContainsKey(n))
+                {
+                    results[n].Add(a);
+                }
+                else
+                {
+                    results.Add(n, [a]);
+                }
+
+                for (long i = 0; i < 8; i++)
+                {
+                    Rec((a << 3) + i, n + 1);
+                }
+            }
+        }
+
+        for (long i = 0; i < 8; i++)
+        {
+            Rec(i, 1);
+        }
+        return results[program.Count];
+    }
+
+    static void Main()
+    {
+        var (registers, program) = ReadInput("input.txt");
+        string part1 = String.Join(",", RunProgram(registers.A));
+        long part2 = Quine(program.GetProgram()).Min();
+        Console.WriteLine($"Part 1: {part1}");
+        Console.WriteLine($"Part 2: {part2}");
     }
 }
