@@ -20,42 +20,43 @@ class Program
         return (patterns, designs);
     }
 
-    static bool DynProg(List<string> patterns, string design, Dictionary<string, bool> cache)
+    static long DynProg(List<string> patterns, string design, Dictionary<string, long> cache)
     {
         if (cache.ContainsKey(design))
         {
             return cache[design];
         }
 
+        long acc = 0;
         foreach (var pattern in patterns)
         {
             if (pattern == design)
             {
-                cache[design] = true;
-                return true;
+                acc++;
             }
 
             if (design.StartsWith(pattern))
             {
-                if (DynProg(patterns, design.Substring(pattern.Length), cache))
-                {
-                    cache[design] = true;
-                    return true;
-                }
+                acc += DynProg(patterns, design.Substring(pattern.Length), cache);
             }
         }
-        cache[design] = false;
-        return false;
+
+        cache[design] = acc;
+        return acc;
     }
 
     static int Part1(List<string> patterns, List<string> designs)
     {
         return designs
-            .Select<string, bool>(design =>
-            {
-                return DynProg(patterns, design, new Dictionary<string, bool>());
-            })
-            .Select(x => x ? 1 : 0)
+            .Select<string, long>(design => DynProg(patterns, design, new Dictionary<string, long>()))
+            .Select(x => x > 0 ? 1 : 0)
+            .Sum();
+    }
+
+    static long Part2(List<string> patterns, List<string> designs)
+    {
+        return designs
+            .Select(design => DynProg(patterns, design, new Dictionary<string, long>()))
             .Sum();
     }
 
@@ -63,6 +64,8 @@ class Program
     {
         var (patterns, designs) = ReadInput(args[1]);
         int part1 = Part1(patterns, designs);
+        long part2 = Part2(patterns, designs);
         Console.WriteLine($"Part 1: {part1}");
+        Console.WriteLine($"Part 2: {part2}");
     }
 }
