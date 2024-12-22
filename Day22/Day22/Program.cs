@@ -97,9 +97,56 @@ class Program
         return input;
     }
 
-    static void Main(string[] args)
+
+    static List<int> GenerateSequence(int n, int length = 2000)
     {
-        var input = ReadInput(args[0]);
+        var current = n % 10;
+        var gen = new Prng32((Prng32Int) n);
+        var sequence = new List<int>{ current };
+
+        while (sequence.Count < length)
+        {
+            sequence.Add((int) gen.Update() % 10);
+        }
+
+        return sequence;
+    }
+
+    static Dictionary<(int, int, int, int), long> GetAllChangeSequencesAndScores(List<int> input, int length)
+    {
+        var result = new Dictionary<(int, int, int, int), long>();
+        foreach (var n in input)
+        {
+            var seen = new HashSet<(int, int, int, int)>();
+            var sequence = GenerateSequence(n, length);
+            for (int i = 0; i + 4 < sequence.Count; i++)
+            {
+                var diffs = (
+                    sequence[i + 1] - sequence[i],
+                    sequence[i + 2] - sequence[i + 1],
+                    sequence[i + 3] - sequence[i + 2],
+                    sequence[i + 4] - sequence[i + 3]);
+                var score = sequence[i + 4];
+
+                if (!seen.Contains(diffs))
+                {
+                    if (result.ContainsKey(diffs))
+                    {
+                        result[diffs] += score;
+                    }
+                    else
+                    {
+                        result[diffs] = score;
+                    }
+                    seen.Add(diffs);
+                }
+            }
+        }
+        return result;
+    }
+
+    static void Part1(List<int> input)
+    {
         long s = 0;
         input.ForEach(n =>
         {
@@ -107,5 +154,18 @@ class Program
             s += prng.Update(2000);
         });
         Console.WriteLine(s);
+    }
+
+    static void Part2(List<int> input)
+    {
+        var changes = GetAllChangeSequencesAndScores(input, 2001);
+        Console.WriteLine(changes.Max(kvp => kvp.Value));
+    }
+
+    static void Main(string[] args)
+    {
+        var input = ReadInput(args[0]);
+        Part1(input);
+        Part2(input);
     }
 }
