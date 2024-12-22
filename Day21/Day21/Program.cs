@@ -137,6 +137,49 @@ class Program
         }
     }
 
+    static long MinPath(int level, int layers, string input,
+        Dictionary<(char, char), List<string>> numPaths,
+        Dictionary<(char, char), List<string>> dirPaths,
+        Dictionary<(int, string), long> cache)
+    {
+        if (cache.ContainsKey((level, input)))
+        {
+            return cache[(level, input)];
+        }
+
+        if (level == layers + 1)
+        {
+            cache.Add((level, input), input.Length);
+            return (long)input.Length;
+        }
+
+        var paths = level == 0 ? numPaths : dirPaths;
+
+        long total = 0;
+        for (int i = 0; i < input.Length; i++)
+        {
+            char start = default;
+            if (i == 0)
+            {
+                start = 'A';
+            }
+            else
+            {
+                start = input[i - 1];
+            }
+            char end = input[i];
+            List<long> scores = new();
+            paths[(start, end)].ForEach(path =>
+            {
+                scores.Add(MinPath(level + 1, layers, path, numPaths, dirPaths, cache));
+            });
+            total += scores.Min();
+        }
+
+        cache.Add((level, input), total);
+        return total;
+    }
+
     static void Main(string[] args)
     {
         var input = ReadInput(args[1]);
@@ -147,56 +190,33 @@ class Program
 
         var numpad = new NumPad();
         var numpadPaths = numpad.GetPaths();
+        var numpadPathsS = new Dictionary<(char, char), List<string>>();
+        foreach (var kvp in numpadPaths)
+        {
+            var stringList = kvp.Value.Select(x => NumPad.PathToString(x)).ToList();
+            numpadPathsS[kvp.Key] = stringList;
+        }
 
         var dirpad = new DirPad();
         var dirpadPaths = dirpad.GetPaths();
-
-        long s = 0;
-
-        foreach (var i in input)
+        var dirpadPathsS = new Dictionary<(char, char), List<string>>();
+        foreach (var kvp in dirpadPaths)
         {
-            if (i.Length == 0) continue;
-            int n = int.Parse(i.Substring(0, 3));
-            var shortestPaths1 = ShortestPaths(i, numpadPaths);
-            var shortestPaths2 = shortestPaths1.SelectMany(p => ShortestPaths(p, dirpadPaths)).ToList();
-            var shortestPaths3 = shortestPaths2.SelectMany(p => ShortestPaths(p, dirpadPaths)).Min(s => s.Length);
-
-            s += (long)(shortestPaths3 * n);
+            var stringList = kvp.Value.Select(x => DirPad.PathToString(x)).ToList();
+            dirpadPathsS[kvp.Key] = stringList;
         }
-        Console.WriteLine(s);
+
+        long result = 0;
+        foreach (var inputCode in input)
+        {
+            if (inputCode.Length == 0) continue;
+            long s = MinPath(0, 25, inputCode, numpadPathsS, dirpadPathsS, new Dictionary<(int, string), long>());
+            long n = long.Parse(inputCode.Substring(0, inputCode.Length - 1));
+            result += s * n;
+        }
+
+        Console.WriteLine(result);
     }
 
-    static List<string> ShortestPaths(string sequence, Dictionary<(char, char), List<List<Node<(int, int, char)>>>> paths)
-    {
-        return Rec(("A" + sequence).ToCharArray(), 1, paths, "", new Dictionary<(char[], int), List<string>>());
-    }
 
-    static List<string> Rec(char[] sequence, int index, Dictionary<(char, char), List<List<Node<(int, int, char)>>>> paths, string acc, Dictionary<(char[], int), List<string>> cache)
-    {
-        if (cache.ContainsKey((sequence, index)))
-        {
-            return cache[(sequence, index)];
-        }
-        List<string> output = new();
-        if (index == sequence.Length - 1)
-        {
-            foreach (var path in paths[(sequence[index - 1], sequence[index])])
-            {
-                output.Add(acc + KeyPad.PathToString(path));
-            }
-
-            cache.Add((sequence, index), output);
-            return output;
-        }
-        else
-        {
-            foreach (var path in paths[(sequence[index - 1], sequence[index])])
-            {
-                output.AddRange(Rec(sequence, index + 1, paths, acc + KeyPad.PathToString(path), cache));
-            }
-
-            cache.Add((sequence, index), output);
-            return output;
-        }
-    }
 }
