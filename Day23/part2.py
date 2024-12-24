@@ -34,8 +34,6 @@ def bron_kerbosch(r, p, x):
         x.add(v)
     return cliques
 
-bron_kerbosch(set(), set(lan.values()), set())
-
 def read_input(filename):
     computers = {}
     with open(filename) as f:
